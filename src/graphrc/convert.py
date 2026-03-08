@@ -26,8 +26,6 @@ def is_orca_output(filepath: str) -> bool:
     return False
 
 
-
-
 def parse_cclib_output(output_file, mode):
     """
     Parse QM output with cclib and generate trajectory.
@@ -109,17 +107,32 @@ def parse_orca_output(orca_file: str, mode: int):
     mode = int(mode)
     amplitudes = [
         0.0,
-        -0.2, -0.4, -0.6, -0.8, -1.0,
-        -0.8, -0.6, -0.4, -0.2, 0.0,
-        0.2, 0.4, 0.6, 0.8, 1.0,
-        0.8, 0.6, 0.4, 0.2,
+        -0.2,
+        -0.4,
+        -0.6,
+        -0.8,
+        -1.0,
+        -0.8,
+        -0.6,
+        -0.4,
+        -0.2,
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0,
+        0.8,
+        0.6,
+        0.4,
+        0.2,
     ]
 
     with open(orca_file) as f:
         lines = f.readlines()
 
     # ------------------------------------------------------------------ freqs
-    freq_block_starts = [i for i, l in enumerate(lines) if "VIBRATIONAL FREQUENCIES" in l]
+    freq_block_starts = [i for i, line in enumerate(lines) if "VIBRATIONAL FREQUENCIES" in line]
     if not freq_block_starts:
         raise ValueError("No VIBRATIONAL FREQUENCIES section found.")
     freq_start = freq_block_starts[-1]
@@ -150,7 +163,7 @@ def parse_orca_output(orca_file: str, mode: int):
 
     # --------------------------------------------------------- equilibrium geometry
     # Use last CARTESIAN COORDINATES (ANGSTROEM) block before the last freq section
-    coord_starts = [i for i, l in enumerate(lines) if "CARTESIAN COORDINATES (ANGSTROEM)" in l]
+    coord_starts = [i for i, line in enumerate(lines) if "CARTESIAN COORDINATES (ANGSTROEM)" in line]
     coord_starts_before = [i for i in coord_starts if i < freq_start]
     if not coord_starts_before:
         coord_starts_before = coord_starts
@@ -178,7 +191,7 @@ def parse_orca_output(orca_file: str, mode: int):
     eq = np.array(eq_coords)
 
     # -------------------------------------------------------------- NORMAL MODES
-    nm_starts = [i for i, l in enumerate(lines) if l.strip() == "NORMAL MODES"]
+    nm_starts = [i for i, line in enumerate(lines) if line.strip() == "NORMAL MODES"]
     if not nm_starts:
         raise ValueError("No NORMAL MODES section found.")
     nm_start = nm_starts[-1]
