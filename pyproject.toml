@@ -13,7 +13,7 @@ dependencies = [
     "numpy",
     "cclib",
     "networkx",
-    "xyzgraph"
+    "xyzgraph>=1.6.2"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
