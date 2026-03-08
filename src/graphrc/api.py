@@ -23,7 +23,7 @@ except (ImportError, AttributeError):
 
 from . import config
 from .characterize import characterize_vib_mode
-from .convert import convert_orca, get_orca_pltvib_path, parse_cclib_output, parse_xyz_string_to_frames
+from .convert import is_orca_output, parse_cclib_output, parse_orca_output, parse_xyz_string_to_frames
 from .core import analyze_internal_displacements, read_xyz_trajectory
 from .graph_compare import analyze_displacement_graphs
 from .utils import save_displacement_pair, setup_logging, write_trajectory_file
@@ -63,7 +63,6 @@ def collect_metadata(input_file: str, **params) -> Dict[str, Any]:
 def load_trajectory(
     input_file: str,
     mode: int = 0,
-    orca_pltvib_path: Optional[str] = None,
     save_to_disk: bool = True,
     print_output: bool = False,
 ) -> Dict[str, Any]:
@@ -73,7 +72,6 @@ def load_trajectory(
     Args:
         input_file: Path to XYZ trajectory or QM output file
         mode: Vibrational mode index (ignored for XYZ files)
-        orca_pltvib_path: Optional path to orca_pltvib executable
         save_to_disk: Whether to save converted trajectory to disk
         print_output: Print status messages
 
@@ -100,19 +98,20 @@ def load_trajectory(
         trajectory_file = input_file
         return {"frames": frames, "frequencies": None, "trajectory_file": trajectory_file}
 
-    # QM output file - try cclib first, then ORCA
-    try:
+    # QM output file - ORCA files use the direct parser; everything else uses cclib
+    if is_orca_output(input_file):
+        try:
+            if print_output:
+                print(f"\nParsing {basename} with direct ORCA output parser...")
+            frequencies, trajectory_string = parse_orca_output(input_file, mode)
+        except Exception as e:
+            if print_output:
+                print(f"Direct ORCA parsing failed ({e}), falling back to cclib...")
+            frequencies, trajectory_string = parse_cclib_output(input_file, mode)
+    else:
         if print_output:
             print(f"\nParsing {basename} with cclib...")
         frequencies, trajectory_string = parse_cclib_output(input_file, mode)
-    except Exception as e:
-        if print_output:
-            print(f"cclib failed ({e}), trying orca_pltvib...")
-
-        if orca_pltvib_path is None:
-            orca_pltvib_path = get_orca_pltvib_path()
-
-        frequencies, trajectory_string = convert_orca(input_file, mode, pltvib_path=orca_pltvib_path)
 
     # Convert string to frames
     frames = parse_xyz_string_to_frames(trajectory_string)
@@ -155,7 +154,6 @@ def run_vib_analysis(
     save_trajectory: bool = config.SAVE_TRAJECTORY_DEFAULT,
     save_displacement: bool = config.SAVE_DISPLACEMENT_DEFAULT,
     displacement_scale: int = config.DEFAULT_DISPLACEMENT_LEVEL,
-    orca_pltvib_path: Optional[str] = None,
     print_output: bool = False,
     show_all: bool = False,
     debug: bool = False,
@@ -190,7 +188,6 @@ def run_vib_analysis(
         save_trajectory: Save converted trajectory to disk
         save_displacement: Save displaced structure pair
         displacement_scale: Displacement amplitude level (1-4)
-        orca_pltvib_path: Path to orca_pltvib executable
         print_output: Print formatted analysis results to console
         show_all: Show all changes including minor angles/dihedrals
         debug: Enable debug output
@@ -204,30 +201,14 @@ def run_vib_analysis(
             - 'graph': Graph analysis results (if enabled)
             - 'displacement_files': Paths to saved displacement files (if enabled)
     """
-    # Set up logging and print header if outputting to console
     if print_output or debug:
-        # Print main header first
         print("=" * 80)
         print(" " * 32 + "GRAPHRC")
         print(" " * 12 + "Internal Coordinate Analysis of Vibrational Modes")
         print(" " * 26 + "A. S. Goodfellow, 2025")
         print("=" * 80)
 
-        # Set up logging (prints debug message if debug mode)
-        setup_logging(debug=debug)
-
-    # Load trajectory (suppress print messages until after metadata)
-    trajectory_data = load_trajectory(
-        input_file,
-        mode=mode,
-        orca_pltvib_path=orca_pltvib_path,
-        save_to_disk=save_trajectory,
-        print_output=False,  # Suppress here, will print in output.py
-    )
-
-    frames = trajectory_data["frames"]
-
-    # Collect metadata first (will be printed in output.py)
+    # Print metadata header before loading so nothing bleeds into it
     metadata = collect_metadata(
         input_file=input_file,
         mode=mode,
@@ -245,7 +226,22 @@ def run_vib_analysis(
     if print_output:
         from .output import print_metadata_header
 
-        print_metadata_header(metadata, trajectory_data)
+        print_metadata_header(metadata, {})
+
+    if debug:
+        print("Initiating debugging:")
+
+    if print_output or debug:
+        setup_logging(debug=debug)
+
+    trajectory_data = load_trajectory(
+        input_file,
+        mode=mode,
+        save_to_disk=save_trajectory,
+        print_output=False,
+    )
+
+    frames = trajectory_data["frames"]
 
     # Now print loading info after metadata will be displayed
     if print_output:

@@ -16,4 +16,3 @@ def test_version():
 def test_citation():
     """Citation contains package name."""
     assert "graphRC" in __citation__
-

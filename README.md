@@ -56,6 +56,9 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 ### From pypi
 ```bash
 pip install graphrc
+
+# With optional dependencies for running threshold tuning plot
+pip install graphrc[examples]
 ```
 
 ### From Source (*up-to-date*)
@@ -74,8 +77,8 @@ pip install git+https://github.com/aligfellow/graphRC.git
 - `xyzgraph` - Molecular graph construction (does the graph analysis)
 - `cclib` - Parsing Gaussian/ORCA output
 
-**Optional**:
-- ORCA with `orca_pltvib` in PATH
+**Optional:**
+- `matplotlib` and `seaborn` - Plotting for example scripts (`pip install graphrc[examples]`)
 
 ---
 
@@ -502,8 +505,6 @@ output options:
   --displacement-scale DISPLACEMENT_SCALE, -ds DISPLACEMENT_SCALE
                         Displacement level (1-4, ~0.2-0.8 amplitude) (default: 1)
   --no-save             Do not save trajectory to disk (keep in memory only)
-  --orca-path ORCA_PATH
-                        Path to ORCA executable directory
 ```
 
 
@@ -584,9 +585,6 @@ graphrc input.xyz -sd -ds 2
 
 # Don't save trajectory to disk
 graphrc input.xyz --no-save
-
-# Specify ORCA path
-graphrc input.out --orca-path /bin/orca
 ```
 
 ### Complete Example
@@ -612,13 +610,9 @@ For example:
 from graphrc import run_vib_analysis
 
 xyz_trj = 'data/bimp.v000.xyz'
-# ORCA_PATH = os.system('which orca')
-# ORCA_PATH = '/path/to/orca'
-
 # Basic analysis
 results = run_vib_analysis(
         input_file=xyz_trj,
-        # orca_pltvib_path=ORCA_PATH
     )
 
 vib = results['vibrational']
@@ -801,7 +795,7 @@ Detailed validation results are written to `examples/threshold_optimization.txt`
 
 **Supported Inputs:**
 - XYZ trajectory (`.xyz`) - direct read
-- ORCA output (`.out`) - via cclib or orca_pltvib
+- ORCA output (`.out`) - parsed directly from output file
 - Gaussian (`.log`) - via cclib
 
 **XYZ Format:**

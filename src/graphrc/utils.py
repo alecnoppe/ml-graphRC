@@ -110,11 +110,7 @@ def setup_logging(debug: bool = False) -> None:
         debug: Enable DEBUG level logging (also prints initialization message)
     """
     # Determine log level
-    if debug:
-        level = logging.DEBUG
-        print("Initiating debugging:")
-    else:
-        level = logging.WARNING
+    level = logging.DEBUG if debug else logging.WARNING
 
     # Configure graphrc logger only (avoid polluting third-party loggers)
     graphrc_logger = logging.getLogger("graphrc")

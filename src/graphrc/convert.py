@@ -5,8 +5,6 @@ Handles ORCA and cclib-compatible formats.
 """
 
 import logging
-import os
-import subprocess
 from typing import Any, Dict, List
 
 import cclib
@@ -16,186 +14,16 @@ from xyzgraph import DATA
 logger = logging.getLogger("graphrc")
 
 
-def get_orca_pltvib_path():
-    """Find orca_pltvib executable in the same directory as orca."""
-    orca_path = os.popen("which orca").read().strip()
-    if not orca_path:
-        raise RuntimeError("ORCA not found in PATH. Please ensure ORCA is installed.")
-
-    orca_dir = os.path.dirname(orca_path)
-    pltvib_path = os.path.join(orca_dir, "orca_pltvib")
-
-    if not os.path.exists(pltvib_path):
-        raise RuntimeError(f"orca_pltvib not found at {pltvib_path}")
-
-    return pltvib_path
-
-
-def get_orca_frequencies(orca_file):
-    """Extract vibrational frequencies from ORCA output."""
-    with open(orca_file, "r") as f:
-        lines = f.readlines()
-
-    section_indices = [i for i, line in enumerate(lines) if "VIBRATIONAL FREQUENCIES" in line]
-    if not section_indices:
-        raise ValueError("No vibrational frequencies section found in ORCA output.")
-
-    idx = section_indices[-1]  # last occurrence if multiple are present
-    freqs = []
-
-    for line in lines[idx:]:
-        if "NORMAL MODES" in line:
-            break
-        parts = line.split(":")
-        if len(parts) > 1:
-            try:
-                freq = float(parts[1].split()[0])
-                freqs.append(freq)
-            except (ValueError, IndexError):
-                continue
-    freqs = [f for f in freqs if abs(f) > 1e-5]
-    return freqs
-
-
-def convert_orca(orca_file, mode, pltvib_path=None):
-    """
-    Convert ORCA output to vibration trajectory string.
-
-    Returns: (frequencies, trajectory_xyz_string).
-    """
-    if pltvib_path is None:
-        pltvib_path = get_orca_pltvib_path()
-    if not os.path.exists(orca_file):
-        raise FileNotFoundError(f"ORCA output file {orca_file} does not exist.")
-
-    basename = os.path.splitext(orca_file)[0]
-
-    # Determine orca_mode offset (5 or 6)
-    with open(orca_file, "r") as f:
-        lines = f.readlines()
-
-    n_atoms = None
-    for line in lines:
-        if "Number of atoms" in line:
-            n_atoms = int(line.split()[-1])
-            break
-
-    # Try method 2: Parse from atom index table (xtb frequency-only outputs - very specific...)
-    if n_atoms is None:
-        max_atom_index = 0
-        in_atom_section = False
-        for line in lines:
-            # Detect start of atom index section
-            if "ID    Z sym.   atoms" in line:
-                in_atom_section = True
-                continue
-            # Detect end of atom section (empty line or next section)
-            if in_atom_section and line.strip() == "":
-                break
-            # Parse atom indices from the third column
-            if in_atom_section:
-                parts = line.split()
-                if len(parts) >= 3:
-                    # Third column onwards contains atom indices
-                    for token in parts[3:]:
-                        # Handle ranges like "3-6" and individual numbers like "1"
-                        stripped_token = token.rstrip(",")  # Remove trailing commas
-                        if "-" in stripped_token:
-                            _start, end = stripped_token.split("-")
-                            try:
-                                max_atom_index = max(max_atom_index, int(end))
-                            except ValueError:
-                                continue
-                        else:
-                            try:
-                                max_atom_index = max(max_atom_index, int(stripped_token))
-                            except ValueError:
-                                continue
-
-        if max_atom_index > 0:
-            n_atoms = max_atom_index
-
-    print(f"Determined number of atoms: {n_atoms}")
-    if n_atoms is None:
-        raise ValueError("Could not determine number of atoms from ORCA output.")
-
-    orca_mode = int(mode) + (5 if n_atoms < 3 else 6)
-
-    # Handle multiple frequency blocks
-    freq_indices = [i for i, line in enumerate(lines) if "VIBRATIONAL FREQUENCIES" in line]
-    if not freq_indices:
-        raise ValueError("No vibrational frequencies section found in ORCA output.")
-
-    coord_indices = [i for i, line in enumerate(lines) if "CARTESIAN COORDINATES (ANGSTROEM)" in line]
-
-    if len(freq_indices) > 1:
-        print("INFO: Multiple 'VIBRATIONAL FREQUENCIES' sections found. Using the last one.")
-        idx = max(i for i in coord_indices if i < freq_indices[-1])
-        tmp_file = f"{basename}.tmp"
-        with open(tmp_file, "w") as f:
-            f.writelines(lines[idx:])
-        result = subprocess.run(
-            [pltvib_path, tmp_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
-        )
-        os.remove(tmp_file)
-        if result.returncode == 0 and os.path.exists(f"{basename}.tmp.v{orca_mode:03d}.xyz"):
-            os.system(f"mv {basename}.tmp.v{orca_mode:03d}.xyz {basename}.out.v{orca_mode:03d}.xyz")
-    else:
-        result = subprocess.run(
-            [pltvib_path, orca_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
-        )
-
-    # Check if orca_pltvib succeeded on the .out file
-    expected_output = f"{basename}.out.v{orca_mode:03d}.xyz"
-    if os.path.exists(expected_output):
-        os.system(f"mv {basename}.out.v{orca_mode:03d}.xyz {basename}.out.v{mode:03d}.xyz")
-        orca_vib = f"{basename}.out.v{mode:03d}.xyz"
-    else:
-        # orca_pltvib failed - check for .hess file fallback
-        hess_file = f"{basename}.hess"
-        if os.path.exists(hess_file):
-            print(f"INFO: orca_pltvib failed on {os.path.basename(orca_file)}, trying {os.path.basename(hess_file)}...")
-            # For .hess files, use mode directly (no offset)
-            result = subprocess.run(
-                [pltvib_path, hess_file, str(orca_mode)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-            expected_hess_output = f"{basename}.hess.v{orca_mode:03d}.xyz"
-            if os.path.exists(expected_hess_output):
-                # Rename to match expected pattern
-                orca_vib = f"{basename}.out.v{mode:03d}.xyz"
-                os.rename(expected_hess_output, orca_vib)
-            else:
-                raise FileNotFoundError(
-                    f"orca_pltvib failed on both {os.path.basename(orca_file)} and {os.path.basename(hess_file)}."
-                )
-        else:
-            raise FileNotFoundError(
-                f"File {expected_output} not found after orca_pltvib. No .hess file available for fallback."
-            )
-
-    if not os.path.exists(orca_vib):
-        raise FileNotFoundError(f"File {orca_vib} not found. Ensure ORCA output is correct.")
-
-    with open(orca_vib, "r") as f:
-        lines = f.readlines()
-
-    xyz_len = int(lines[0].split()[0]) + 2
-    xyzs = [lines[i : i + xyz_len] for i in range(0, len(lines), xyz_len)]
-
-    trj_data = ""
-    for idx_block in xyzs:
-        trj_data += idx_block[0]
-        trj_data += f"Mode {mode} Frame: {idx_block[1]}"
-        for line in idx_block[2:]:
-            parts = line.split()
-            trj_data += f"{parts[0]} {parts[1]} {parts[2]} {parts[3]}\n"
-
-    os.remove(orca_vib)
-    freqs = get_orca_frequencies(orca_file)
-    return freqs, trj_data
+def is_orca_output(filepath: str) -> bool:
+    """Return True if the file contains the ORCA banner in its header."""
+    try:
+        with open(filepath) as f:
+            for _ in range(10):
+                if "O   R   C   A" in f.readline():
+                    return True
+    except OSError:
+        pass
+    return False
 
 
 def parse_cclib_output(output_file, mode):
@@ -255,6 +83,161 @@ def parse_cclib_output(output_file, mode):
     for amp in amplitudes:
         displaced = eq_coords + amp * displacement
         trj_data += f"{len(atom_numbers)}\n"
+        trj_data += f"Mode: {mode}, Frequency: {freq:.2f} cm**-1, Amplitude: {amp:.2f}\n"
+        for sym, coord in zip(atom_symbols, displaced):
+            trj_data += f"{sym} {coord[0]:.6f} {coord[1]:.6f} {coord[2]:.6f}\n"
+
+    return freqs, trj_data
+
+
+def parse_orca_output(orca_file: str, mode: int):
+    """
+    Parse ORCA output file directly for normal modes.
+
+    Reads VIBRATIONAL FREQUENCIES, CARTESIAN COORDINATES (ANGSTROEM), and
+    NORMAL MODES sections from the last frequency block in the file.
+
+    The NORMAL MODES table stores mass-weighted Cartesian displacements
+    (L_ik = disp_ik / sqrt(m_i)), normalised to unit length. We apply them
+    with the same amplitude sequence as parse_cclib_output so that trajectories
+    are directly comparable.
+
+    Returns: (frequencies, trajectory_xyz_string).
+    """
+    mode = int(mode)
+    amplitudes = [
+        0.0,
+        -0.2,
+        -0.4,
+        -0.6,
+        -0.8,
+        -1.0,
+        -0.8,
+        -0.6,
+        -0.4,
+        -0.2,
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0,
+        0.8,
+        0.6,
+        0.4,
+        0.2,
+    ]
+
+    with open(orca_file) as f:
+        lines = f.readlines()
+
+    # ------------------------------------------------------------------ freqs
+    freq_block_starts = [i for i, line in enumerate(lines) if "VIBRATIONAL FREQUENCIES" in line]
+    if not freq_block_starts:
+        raise ValueError("No VIBRATIONAL FREQUENCIES section found.")
+    freq_start = freq_block_starts[-1]
+
+    all_freqs: List[float] = []
+    n_zero = 0
+    for line in lines[freq_start:]:
+        if "NORMAL MODES" in line:
+            break
+        parts = line.split(":")
+        if len(parts) > 1:
+            try:
+                f = float(parts[1].split()[0])
+                all_freqs.append(f)
+                if abs(f) <= 1e-5:
+                    n_zero += 1
+            except (ValueError, IndexError):
+                continue
+
+    freqs = [f for f in all_freqs if abs(f) > 1e-5]
+    if not freqs:
+        raise ValueError("No non-zero vibrational frequencies found.")
+    if mode < 0 or mode >= len(freqs):
+        raise ValueError(f"Mode {mode} out of range — file has {len(freqs)} modes.")
+
+    # column index in the NORMAL MODES table
+    col = mode + n_zero
+
+    # --------------------------------------------------------- equilibrium geometry
+    # Use last CARTESIAN COORDINATES (ANGSTROEM) block before the last freq section
+    coord_starts = [i for i, line in enumerate(lines) if "CARTESIAN COORDINATES (ANGSTROEM)" in line]
+    coord_starts_before = [i for i in coord_starts if i < freq_start]
+    if not coord_starts_before:
+        coord_starts_before = coord_starts
+    coord_start = coord_starts_before[-1] + 2  # skip header + dashes
+
+    atom_symbols: List[str] = []
+    eq_coords: List[List[float]] = []
+    for line in lines[coord_start:]:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("-"):
+            break
+        parts = stripped.split()
+        if len(parts) < 4:
+            break
+        try:
+            atom_symbols.append(parts[0])
+            eq_coords.append([float(parts[1]), float(parts[2]), float(parts[3])])
+        except ValueError:
+            break
+
+    if not atom_symbols:
+        raise ValueError("Could not parse equilibrium geometry.")
+    n_atoms = len(atom_symbols)
+    n_dof = 3 * n_atoms
+    eq = np.array(eq_coords)
+
+    # -------------------------------------------------------------- NORMAL MODES
+    nm_starts = [i for i, line in enumerate(lines) if line.strip() == "NORMAL MODES"]
+    if not nm_starts:
+        raise ValueError("No NORMAL MODES section found.")
+    nm_start = nm_starts[-1]
+
+    # skip header lines (dashes + description + blank)
+    data_start = nm_start + 1
+    while data_start < len(lines) and not lines[data_start].strip().startswith("0"):
+        data_start += 1
+
+    # parse table: blocks of 6 columns, n_dof rows each
+    mode_col: List[float] = [0.0] * n_dof
+    i = data_start
+    while i < len(lines):
+        line = lines[i].strip()
+        if not line:
+            i += 1
+            continue
+        # header line: space-separated integers
+        parts = line.split()
+        try:
+            col_indices = [int(x) for x in parts]
+        except ValueError:
+            break  # reached next section
+        i += 1
+        if col not in col_indices:
+            # skip this block's rows
+            i += n_dof
+            continue
+        local_idx = col_indices.index(col)
+        for _ in range(n_dof):
+            if i >= len(lines):
+                break
+            row_parts = lines[i].split()
+            row_idx = int(row_parts[0])
+            mode_col[row_idx] = float(row_parts[1 + local_idx])
+            i += 1
+        break  # found and parsed our column
+
+    displacement = np.array(mode_col).reshape(n_atoms, 3)
+
+    # --------------------------------------------------------- build trajectory
+    freq = freqs[mode]
+    trj_data = ""
+    for amp in amplitudes:
+        displaced = eq + amp * displacement
+        trj_data += f"{n_atoms}\n"
         trj_data += f"Mode: {mode}, Frequency: {freq:.2f} cm**-1, Amplitude: {amp:.2f}\n"
         for sym, coord in zip(atom_symbols, displaced):
             trj_data += f"{sym} {coord[0]:.6f} {coord[1]:.6f} {coord[2]:.6f}\n"
