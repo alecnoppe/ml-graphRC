@@ -151,7 +151,6 @@ def main():
     output_group.add_argument(
         "--no-save", action="store_true", help="Do not save trajectory to disk (keep in memory only)"
     )
-    output_group.add_argument("--orca-path", help="Path to ORCA executable directory")
 
     # Logging
     parser.add_argument("--debug", "-d", action="store_true", help="Enable debug output")
@@ -226,7 +225,6 @@ def main():
             save_trajectory=not args.no_save,
             save_displacement=args.save_displacement,
             displacement_scale=args.displacement_scale,
-            orca_pltvib_path=args.orca_path,
             print_output=True,  # CLI always prints output
             show_all=args.all,  # Show minor changes if requested
             debug=args.debug,

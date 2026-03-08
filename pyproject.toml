@@ -21,6 +21,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[project.optional-dependencies]
+examples = ["matplotlib", "seaborn"]
+
 [project.urls]
 homepage = "https://github.com/aligfellow/graphRC"
 
@@ -37,6 +40,8 @@ dev = [
     "pytest-cov>=5.0.0",
     "ruff>=0.14.14",
     "ty>=0.0.14",
+    "matplotlib",  # required for threshold optimisation plot
+    "seaborn",     # required for threshold optimisation plot
 ]
 
 # ===== Ruff =====

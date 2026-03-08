@@ -1,11 +1,11 @@
 ======================================================================
 BOND THRESHOLD VALIDATION
-Generated: 2025-12-09 17:24:32
+Generated: 2026-03-08 12:28:56
 ======================================================================
 
 Software Versions:
 	graphRC version: v1.3.5
-	xyzgraph version: v1.4.8
+	xyzgraph version: v1.4.9
 
 Test systems: 15
 Systems: ambh, atrop, bimp, cpa, cycl, dihedral, mn-h2, mn-hy, ru-co-nuc, ru-co, sn2, sn2_large, spiro-ts1, spiro-ts2, thia-ma
@@ -21,10 +21,10 @@ Testing bond_threshold = 0.10
       Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
       Detected Bonds: (0, 83) [O-H], (1, 10) [C-C], (10, 11) [C-O], (10, 14) [C-C], (11, 12) [O-C], (12, 13) [C-C], (13, 14) [C-C]
       Extra Bonds: (0, 83) [O-H], (1, 10) [C-C], (10, 11) [C-O], (12, 13) [C-C], (13, 14) [C-C]
-  ✗ cpa: Bonds: Expected=3, Detected=5, Missing=0, Extra=2
+  ✗ cpa: Bonds: Expected=3, Detected=8, Missing=0, Extra=5
       Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
-      Detected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 71) [C-C], (70, 74) [C-C], (73, 74) [C-C]
-      Extra Bonds: (70, 71) [C-C], (73, 74) [C-C]
+      Detected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 71) [C-C], (70, 74) [C-C], (71, 81) [C-O], (72, 73) [C-C], (72, 75) [C-O], (73, 74) [C-C]
+      Extra Bonds: (70, 71) [C-C], (71, 81) [C-O], (72, 73) [C-C], (72, 75) [C-O], (73, 74) [C-C]
   ✗ cycl: Bonds: Expected=1, Detected=4, Missing=0, Extra=3
       Expected Bonds: (2, 6) [C-N]
       Detected Bonds: (1, 6) [C-N], (2, 6) [C-N], (2, 20) [C-O], (2, 41) [C-N]
@@ -62,8 +62,8 @@ Testing bond_threshold = 0.10
 
   Statistics:
     Detection Rate: 29/29 bonds (100.0%)
-    False Positives: 26 bonds (47.3%)
-    F1 Score: 69.0%
+    False Positives: 29 bonds (50.0%)
+    F1 Score: 66.7%
     Perfect Detection: 7/15 systems (46.7%)
 
 ======================================================================
@@ -77,8 +77,10 @@ Testing bond_threshold = 0.15
       Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
       Detected Bonds: (0, 83) [O-H], (1, 10) [C-C], (10, 11) [C-O], (10, 14) [C-C], (11, 12) [O-C], (12, 13) [C-C], (13, 14) [C-C]
       Extra Bonds: (0, 83) [O-H], (1, 10) [C-C], (10, 11) [C-O], (12, 13) [C-C], (13, 14) [C-C]
-  ✓ cpa: Bonds=3, Dihedrals=0
-      Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+  ✗ cpa: Bonds: Expected=3, Detected=5, Missing=0, Extra=2
+      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+      Detected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 71) [C-C], (70, 74) [C-C], (73, 74) [C-C]
+      Extra Bonds: (70, 71) [C-C], (73, 74) [C-C]
   ✗ cycl: Bonds: Expected=1, Detected=2, Missing=0, Extra=1
       Expected Bonds: (2, 6) [C-N]
       Detected Bonds: (2, 6) [C-N], (2, 41) [C-N]
@@ -116,9 +118,9 @@ Testing bond_threshold = 0.15
 
   Statistics:
     Detection Rate: 29/29 bonds (100.0%)
-    False Positives: 14 bonds (32.6%)
-    F1 Score: 80.6%
-    Perfect Detection: 8/15 systems (53.3%)
+    False Positives: 16 bonds (35.6%)
+    F1 Score: 78.4%
+    Perfect Detection: 7/15 systems (46.7%)
 
 ======================================================================
 Testing bond_threshold = 0.20
@@ -357,10 +359,8 @@ Testing bond_threshold = 0.45
       Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
       Detected Bonds: (11, 12) [O-C]
       Missing Bonds: (10, 14) [C-C]
-  ✗ cpa: Bonds: Expected=3, Detected=1, Missing=2, Extra=0
-      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
-      Detected Bonds: (70, 74) [C-C]
-      Missing Bonds: (23, 35) [O-H], (35, 75) [H-O]
+  ✓ cpa: Bonds=3, Dihedrals=0
+      Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
   ✓ cycl: Bonds=1, Dihedrals=0
       Bonds: (2, 6) [C-N]
   ✓ dihedral: Bonds=0, Dihedrals=1
@@ -387,10 +387,10 @@ Testing bond_threshold = 0.45
       Dihedrals: (48, 64, 65, 67), (50, 49, 51, 52)
 
   Statistics:
-    Detection Rate: 26/29 bonds (89.7%)
+    Detection Rate: 28/29 bonds (96.6%)
     False Positives: 0 bonds (0.0%)
-    F1 Score: 94.5%
-    Perfect Detection: 13/15 systems (86.7%)
+    F1 Score: 98.2%
+    Perfect Detection: 14/15 systems (93.3%)
 
 ======================================================================
 Testing bond_threshold = 0.50
@@ -403,10 +403,8 @@ Testing bond_threshold = 0.50
       Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
       Detected Bonds: (11, 12) [O-C]
       Missing Bonds: (10, 14) [C-C]
-  ✗ cpa: Bonds: Expected=3, Detected=1, Missing=2, Extra=0
-      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
-      Detected Bonds: (70, 74) [C-C]
-      Missing Bonds: (23, 35) [O-H], (35, 75) [H-O]
+  ✓ cpa: Bonds=3, Dihedrals=0
+      Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
   ✓ cycl: Bonds=1, Dihedrals=0
       Bonds: (2, 6) [C-N]
   ✓ dihedral: Bonds=0, Dihedrals=1
@@ -435,10 +433,10 @@ Testing bond_threshold = 0.50
       Dihedrals: (48, 64, 65, 67), (50, 49, 51, 52)
 
   Statistics:
-    Detection Rate: 25/29 bonds (86.2%)
+    Detection Rate: 27/29 bonds (93.1%)
     False Positives: 0 bonds (0.0%)
-    F1 Score: 92.6%
-    Perfect Detection: 12/15 systems (80.0%)
+    F1 Score: 96.4%
+    Perfect Detection: 13/15 systems (86.7%)
 
 ======================================================================
 Testing bond_threshold = 0.55
@@ -451,10 +449,8 @@ Testing bond_threshold = 0.55
       Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
       Detected Bonds: (11, 12) [O-C]
       Missing Bonds: (10, 14) [C-C]
-  ✗ cpa: Bonds: Expected=3, Detected=1, Missing=2, Extra=0
-      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
-      Detected Bonds: (70, 74) [C-C]
-      Missing Bonds: (23, 35) [O-H], (35, 75) [H-O]
+  ✓ cpa: Bonds=3, Dihedrals=0
+      Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
   ✓ cycl: Bonds=1, Dihedrals=0
       Bonds: (2, 6) [C-N]
   ✓ dihedral: Bonds=0, Dihedrals=1
@@ -483,10 +479,10 @@ Testing bond_threshold = 0.55
       Dihedrals: (48, 64, 65, 67), (50, 49, 51, 52)
 
   Statistics:
-    Detection Rate: 25/29 bonds (86.2%)
+    Detection Rate: 27/29 bonds (93.1%)
     False Positives: 0 bonds (0.0%)
-    F1 Score: 92.6%
-    Perfect Detection: 12/15 systems (80.0%)
+    F1 Score: 96.4%
+    Perfect Detection: 13/15 systems (86.7%)
 
 ======================================================================
 Testing bond_threshold = 0.60
@@ -499,10 +495,8 @@ Testing bond_threshold = 0.60
       Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
       Detected Bonds: (11, 12) [O-C]
       Missing Bonds: (10, 14) [C-C]
-  ✗ cpa: Bonds: Expected=3, Detected=1, Missing=2, Extra=0
-      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
-      Detected Bonds: (70, 74) [C-C]
-      Missing Bonds: (23, 35) [O-H], (35, 75) [H-O]
+  ✓ cpa: Bonds=3, Dihedrals=0
+      Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
   ✓ cycl: Bonds=1, Dihedrals=0
       Bonds: (2, 6) [C-N]
   ✓ dihedral: Bonds=0, Dihedrals=1
@@ -531,10 +525,10 @@ Testing bond_threshold = 0.60
       Dihedrals: (48, 64, 65, 67), (50, 49, 51, 52)
 
   Statistics:
-    Detection Rate: 25/29 bonds (86.2%)
+    Detection Rate: 27/29 bonds (93.1%)
     False Positives: 0 bonds (0.0%)
-    F1 Score: 92.6%
-    Perfect Detection: 12/15 systems (80.0%)
+    F1 Score: 96.4%
+    Perfect Detection: 13/15 systems (86.7%)
 
 ======================================================================
 SUMMARY
@@ -546,14 +540,14 @@ Metric Explanation:
 
 Threshold    Detection       False Pos       F1 Score    
 ----------------------------------------------------------------------
-0.10         100.0%           47.3%           69.0%
-0.15         100.0%           32.6%           80.6%
+0.10         100.0%           50.0%           66.7%
+0.15         100.0%           35.6%           78.4%
 0.20         100.0%           23.7%           86.6%
 0.25         100.0%           12.1%           93.5%
 0.30         100.0%            6.5%           96.7%
 0.35         100.0%            6.5%           96.7%
 0.40         100.0%            0.0%          100.0% ← current
-0.45          89.7%            0.0%           94.5%
-0.50          86.2%            0.0%           92.6%
-0.55          86.2%            0.0%           92.6%
-0.60          86.2%            0.0%           92.6%
+0.45          96.6%            0.0%           98.2%
+0.50          93.1%            0.0%           96.4%
+0.55          93.1%            0.0%           96.4%
+0.60          93.1%            0.0%           96.4%
