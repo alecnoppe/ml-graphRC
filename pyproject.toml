@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "graphRC"
+name = "ml-graphRC"
 version = "0.0.0"
 description = "Internal Coordinate Analysis of Vibrational Modes."
 authors = [{name = "Dr Alister Goodfellow"}]
@@ -25,7 +25,7 @@ classifiers = [
 examples = ["matplotlib", "seaborn"]
 
 [project.urls]
-homepage = "https://github.com/aligfellow/graphRC"
+homepage = "https://github.com/alecnoppe/ml-graphRC"
 
 [project.scripts]
 graphrc = "graphrc.cli:main"
